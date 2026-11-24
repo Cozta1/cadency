@@ -213,7 +213,7 @@
     if (!pe) { try { localStorage.removeItem("cad_hist"); } catch (e) {} }
     if (!an) { try { localStorage.removeItem("cad_analytics"); } catch (e) {} } else contaVisita();
     bannerCookies(); var m = $(".modal-fundo"); if (m) m.remove();
-    toast("Preferências de cookies salvas."); rota();
+    toast("Preferências de cookies salvas."); rota(true);
   }
   function modalCookies() {
     var c = consent() || {};
@@ -729,7 +729,8 @@
   }
 
   /* ---------- roteador ---------- */
-  function rota() {
+  function rota(manterScroll) {
+    var y0 = manterScroll === true ? window.scrollY : 0;
     var h = location.hash.replace(/^#/, "") || "/", partes = h.split("?"), caminho = partes[0], qs = {};
     (partes[1] || "").split("&").forEach(function (kv) { if (!kv) return; var p = kv.split("="); qs[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || "").replace(/\+/g, " ")); });
     var seg = caminho.split("/").filter(Boolean);
@@ -739,7 +740,7 @@
     (mapa[seg[0] || ""] || naoEncontrado)();
     var titulos = { "": "Cadency", catalogo: "Motos", produto: (produto(seg[1]) || {}).nome, carrinho: "Carrinho", checkout: "Checkout", pedido: "Pedido", emails: "E-mails de teste", sobre: "Sobre", contato: "Contato", trocas: "Trocas e devoluções", privacidade: "Privacidade", cookies: "Cookies", frete: "Frete e prazos", "meus-dados": "Meus dados", lojista: "Painel do lojista" };
     document.title = (seg[0] ? (titulos[seg[0]] || "Cadency") + " · " : "") + "Cadency";
-    window.scrollTo(0, 0); atualizaBadge();
+    window.scrollTo(0, y0); atualizaBadge();
   }
 
   cabecalho(); rodape(); bannerCookies();
