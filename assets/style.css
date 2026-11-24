@@ -239,3 +239,12 @@ body{font-size:16px;line-height:1.5} a{color:var(--ink)} .wrap{max-width:1280px;
 #rodape .logo{display:flex;color:#fff}.compra{display:flex;flex-direction:column;align-items:stretch}.compra .linha-compra{order:1}.compra .garantias{order:2}.compra .caixa:not(.frete-produto),.compra details{order:3}.frete-produto{border:0;padding:0!important;margin-top:18px}.frete-calc input{min-width:0}.garantias{list-style:none;padding:16px 0;border-top:1px solid var(--line);color:var(--ink2)}.garantias li{margin:8px 0}.garantias li:before{content:'✓';color:var(--ink);margin-right:12px}
 @media(max-width:640px){.aviso-topo .wrap span:first-child{display:none}.aviso-topo .wrap span:last-child{display:block;min-width:0;overflow-wrap:anywhere}.topo-in,.nav,.busca{min-width:0}.nav{max-width:100%;flex-wrap:wrap}.nav a{white-space:normal;overflow-wrap:anywhere}}
 @media(max-width:640px){.rod-in{grid-template-columns:repeat(2,minmax(0,1fr))}#rodape a{overflow-wrap:anywhere}}
+.hero .arte{background:var(--well)}
+.hero .arte img,.hero .arte svg,.galeria .principal img,.galeria .principal svg,.galeria .thumbs img,.galeria .thumbs svg,.item .mini img,.item .mini svg{width:100%;height:auto}
+.card .img img,.card .img .foto-fallback,.card .img .foto-fallback svg{width:100%;height:100%;object-fit:contain}
+.foto-fallback{display:block}
+.banner-linha img,.banner-linha .foto-fallback{width:90%;height:auto;margin:20px 0 -20px auto}
+.banner-linha .foto-fallback svg{width:100%;margin:0}
+.foto-item{display:inline-block;width:72px;vertical-align:middle;margin:0 10px 8px 0;background:var(--well)}
+.foto-item img,.foto-item svg{width:100%;height:auto}
+.galeria .thumbs{flex-wrap:wrap}
