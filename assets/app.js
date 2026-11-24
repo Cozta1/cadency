@@ -2,6 +2,7 @@
 (function () {
   "use strict";
   var L = window.LOJA, P = window.PRODUTOS, F = window.FRETE, R = window.REGRAS;
+  var C = window.FINANCIAMENTO;
   var app = document.getElementById("app");
 
   /* ---------- utilidades ---------- */
@@ -56,6 +57,26 @@
       else { var i = R.jurosMes, pmt = total * i / (1 - Math.pow(1 + i, -n)); out.push({ n: n, valor: pmt, total: pmt * n, juros: true }); }
     }
     return out;
+  }
+  function financiar(valor, entradaPercentual, prazo) {
+    var entrada = valor * entradaPercentual / 100, liquido = valor - entrada;
+    var base = liquido + C.cadastro + C.registro;
+    var iof = base * (C.iofFixo + C.iofDia * Math.min(prazo * 30, C.diasMax));
+    var financiado = base + iof, parcela = financiado * C.jurosMes / (1 - Math.pow(1 + C.jurosMes, -prazo));
+    var baixo = 0, alto = 1;
+    while (parcela * (1 - Math.pow(1 + alto, -prazo)) / alto > liquido) alto *= 2;
+    for (var i = 0; i < 100; i++) {
+      var meio = (baixo + alto) / 2, presente = parcela * (1 - Math.pow(1 + meio, -prazo)) / meio;
+      if (presente > liquido) baixo = meio; else alto = meio;
+    }
+    return { entrada: entrada, financiado: financiado, iof: iof, parcela: parcela, prazo: prazo, cet: Math.pow(1 + (baixo + alto) / 2, 12) - 1, total: entrada + parcela * prazo };
+  }
+  function resumoFin(f) {
+    return '<p>Entrada: <b>' + brl(f.entrada) + '</b><br>Valor financiado: <b>' + brl(f.financiado) + '</b><br>IOF estimado: ' + brl(f.iof) + '<br>Parcelas: <b>' + f.prazo + 'x de ' + brl(f.parcela) + '</b><br>Taxa: 1,99% ao mês<br>CET anual aproximado: ' + (f.cet * 100).toFixed(2).replace('.', ',') + '%<br>Total pago: <b>' + brl(f.total) + '</b></p><p class="small mute">Inclui cadastro de ' + brl(C.cadastro) + ' e registro de ' + brl(C.registro) + ' no valor financiado.</p>';
+  }
+  function detalhesPagamento(p) {
+    if (p.metodo === "financiamento") return 'Financiamento ' + p.parcelas + 'x · entrada ' + brl(p.entrada) + ' · parcela ' + brl(p.valorParcela) + ' · CET anual aproximado ' + (p.cet * 100).toFixed(2).replace('.', ',') + '%';
+    return p.metodo === "pix" ? "Pix" : p.bandeira + " final " + p.final4 + " · " + p.parcelas + "x de " + brl(p.valorParcela);
   }
   function cpfValido(c) {
     c = so(c); if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
@@ -132,7 +153,7 @@
     o.status = "pago"; registrar(o, "pago", "Pagamento aprovado");
     salvarPedido(o);
     enviarEmail(o.cliente.email, "Pagamento aprovado: pedido " + o.id, emailBase("Pagamento aprovado, sua moto já está sendo preparada",
-      "<p>Olá, " + esc(o.cliente.nome.split(" ")[0]) + ". Confirmamos o pagamento por " + (o.pagamento.metodo === "pix" ? "Pix" : o.pagamento.bandeira + " final " + o.pagamento.final4 + " em " + o.pagamento.parcelas + "x de " + brl(o.pagamento.valorParcela)) + ".</p>" +
+      "<p>Olá, " + esc(o.cliente.nome.split(" ")[0]) + ". Confirmamos o pagamento por " + detalhesPagamento(o.pagamento) + ".</p>" +
       "<p>A moto sai do nosso estoque em Juiz de Fora e chega até <b>" + diaBR(addDias(agora(), o.prazo + 1)) + "</b>. Nota fiscal de teste nº " + o.id.slice(-4) + ".</p>" + tabelaItens(o) +
       "<p style='margin-top:14px'><a class='btn sm' href='#/pedido/" + o.id + "'>Acompanhar pedido</a></p>"), "aprovado");
   }
@@ -257,7 +278,7 @@
       "<p>Só vendemos o que já está no nosso galpão. Você vê o preço final, o frete e a data de entrega antes de pagar, e parcela em até 10x sem juros.</p>" +
       '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn amber" href="#/catalogo">Ver todas as motos</a><a class="btn ghost" style="color:#fff" href="#/sobre">Como trabalhamos</a></div></div>' +
       '<div class="arte">' + img(destaque, "#C2A878", "noite") + "</div></div></section>" +
-      '<div class="wrap">' + volta + '<div class="provas"><div><b>Estoque real</b><span>Pedido só com moto no galpão</span></div><div><b>Frete e prazo antes</b><span>Calcule pelo CEP em qualquer página</span></div><div><b>10x sem juros ou 3% no Pix</b><span>Cartão e Pix em ambiente seguro</span></div><div><b>7 dias para desistir</b><span>Devolução integral (art. 49 do CDC)</span></div></div>' +
+      '<div class="wrap">' + volta + '<div class="provas"><div><b>Estoque real</b><span>Pedido só com moto no galpão</span></div><div><b>Frete e prazo antes</b><span>Calcule pelo CEP em qualquer página</span></div><div><b>10x sem juros, Pix com 3% ou financiamento em até 48x</b><span>Pagamentos em ambiente de teste</span></div><div><b>7 dias para desistir</b><span>Devolução integral (art. 49 do CDC)</span></div></div>' +
       '<section class="secao"><div class="secao-tit"><h2 style="margin:0">Escolha pela linha</h2><a href="#/catalogo">Ver todas</a></div>' +
       '<div class="cats">' + (window.LINHAS || []).map(function (c) { return '<a href="#/catalogo?cat=' + encodeURIComponent(c.nome) + '">' + c.nome + "</a>"; }).join("") + "</div></section>" +
       (window.LINHAS || []).map(function (l) { var ps = P.filter(function (p) { return p.categoria === l.nome; }); return '<section class="secao"><div class="secao-tit"><div><h2 style="margin:0">' + esc(l.nome) + '</h2><span class="mute">' + esc(l.desc) + '</span></div><a href="#/catalogo?cat=' + encodeURIComponent(l.nome) + '">Ver linha</a></div><div class="produtos">' + ps.map(cardProduto).join("") + "</div></section>"; }).join("") +
@@ -305,6 +326,7 @@
       '<button class="btn amber" id="comprar" style="flex:1">Adicionar ao carrinho</button></div>' +
       '<div class="caixa" style="padding:16px 18px"><label for="cep">Frete e prazo de entrega</label><div class="frete-calc"><input id="cep" inputmode="numeric" placeholder="00000-000" maxlength="9" value="' + esc(cepSalvo) + '"><button class="btn sm dark" id="calc">Calcular</button></div><div class="frete-res" id="frete-res"></div>' +
       '<p class="small mute" style="margin:8px 0 0"><a href="https://buscacepinter.correios.com.br/" target="_blank" rel="noopener">Não sei meu CEP</a> · <a href="#/frete">Tabela de frete</a></p></div>' +
+      '<div class="caixa"><h3>Simule o financiamento</h3><div class="grid2"><div class="campo"><label for="sim-entrada">Entrada (%)</label><input id="sim-entrada" type="number" min="20" max="99.99" step="0.01" value="20"></div><div class="campo"><label for="sim-prazo">Prazo</label><select id="sim-prazo">' + C.prazos.map(function (n) { return '<option value="' + n + '">' + n + ' meses</option>'; }).join('') + '</select></div></div><div id="sim-resultado"></div><p class="small mute">Simulação de teste. Sujeita a análise de crédito.</p></div>' +
       '<details><summary>Parcelamento no cartão</summary><table id="tab-parc"></table><p class="small mute" style="margin-top:8px">Até 10x sem juros. Em 11x e 12x há juros de 1,99% a.m. (taxa da operadora repassada).</p></details>' +
       "<details open><summary>Descrição</summary><p style=\"margin-top:10px\">" + esc(p.descricao) + "</p></details>" +
       '<details><summary>Ficha técnica</summary><table class="ficha">' + Object.keys(p.ficha).map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(p.ficha[k]) + "</td></tr>"; }).join("") + "</table></details>" +
@@ -323,6 +345,11 @@
       $("#tab-parc").innerHTML = "<tr><th>Parcelas</th><th>Valor</th><th>Total</th></tr>" + parcelas(p.preco).map(function (x) { return "<tr><td>" + x.n + "x " + (x.juros ? "com juros" : "sem juros") + "</td><td>" + brl(x.valor) + "</td><td>" + brl(x.total) + "</td></tr>"; }).join("");
     }
     desenha();
+    function simProduto() {
+      var entrada = +$("#sim-entrada").value;
+      $("#sim-resultado").innerHTML = entrada >= C.entradaMin && entrada < 100 ? resumoFin(financiar(p.preco, entrada, +$("#sim-prazo").value)) : '<p class="alerta erro">Informe entrada de 20% a menos de 100%.</p>';
+    }
+    $("#sim-entrada").oninput = simProduto; $("#sim-prazo").onchange = simProduto; simProduto();
     $("#menos").onclick = function () { if (qtd > 1) { qtd--; $("#qtd").textContent = qtd; } };
     $("#mais").onclick = function () { if (qtd < Math.min(R.limitePorCpf, estoque(corSel.sku))) { qtd++; $("#qtd").textContent = qtd; } else toast("Máximo de " + R.limitePorCpf + " motos por pedido."); };
     $("#comprar").onclick = function () { if (addCarrinho(corSel.sku, qtd)) { toast(p.nome + " adicionada ao carrinho."); location.hash = "#/carrinho"; } };
@@ -413,9 +440,15 @@
       } else {
         var tot = r.sub + (r.frete ? r.frete.valor : 0);
         corpo = "<h2>Pagamento</h2>" + '<div class="alerta warn">Ambiente de teste: nenhum valor é cobrado. Use os dados de teste abaixo.</div>' +
-          '<div class="abas"><button data-m="pix" class="' + (metodo === "pix" ? "on" : "") + '">Pix · 3% off</button><button data-m="cartao" class="' + (metodo === "cartao" ? "on" : "") + '">Cartão de crédito</button></div>';
+          '<div class="abas"><button data-m="pix" class="' + (metodo === "pix" ? "on" : "") + '">Pix · 3% off</button><button data-m="cartao" class="' + (metodo === "cartao" ? "on" : "") + '">Cartão de crédito</button><button data-m="financiamento" class="' + (metodo === "financiamento" ? "on" : "") + '">Financiamento</button></div>';
         if (metodo === "pix") corpo += "<p>O QR Code vale " + R.pixValidadeMin + " minutos. A confirmação é automática e o pedido é separado assim que o pagamento cai.</p><p class=\"small mute\">Desconto de 3% sobre os produtos: é a diferença entre a taxa do cartão (4%) e a do Pix (1%), então a margem da loja não muda.</p>" +
           '<button class="btn amber block" id="pagar">Gerar Pix de ' + brl(r.total) + "</button>";
+        else if (metodo === "financiamento") corpo +=
+          campo("fin-renda", "Renda mensal (R$)", d.finRenda, 'type="number" min="0.01" step="0.01"', "Informe uma renda válida") +
+          '<div class="campo"><label for="fin-ocupacao">Ocupação</label><select id="fin-ocupacao"><option value="">Selecione</option>' + ["Assalariado", "Autônomo", "Entregador por aplicativo", "Empresário", "Aposentado"].map(function (x) { return '<option' + (d.finOcupacao === x ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
+          campo("fin-nascimento", "Data de nascimento", d.finNascimento, 'type="date"', "Informe uma data válida") +
+          '<div class="grid2">' + campo("fin-entrada", "Entrada (%)", d.finEntrada || 20, 'type="number" min="20" max="99.99" step="0.01"', "Informe de 20% a menos de 100%") + '<div class="campo"><label for="fin-prazo">Prazo</label><select id="fin-prazo">' + C.prazos.map(function (n) { return '<option value="' + n + '"' + (n === (d.finPrazo || 48) ? ' selected' : '') + '>' + n + ' meses</option>'; }).join('') + '</select></div></div>' +
+          '<p class="small mute">Simulação de teste. Sujeita a análise de crédito. A entrada é paga no Pix e o banco parceiro paga a loja à vista.</p><button class="btn block" id="analisar">Enviar para análise</button><div id="fin-resultado"></div>';
         else corpo += '<div class="teste"><b>Cartões de teste</b> (clique para preencher): <code data-c="4242424242424242">4242 4242 4242 4242</code> aprovado · <code data-c="5555555555554444">5555 5555 5555 4444</code> aprovado · <code data-c="4000000000000002">4000 0000 0000 0002</code> recusado. Validade futura e qualquer CVV.</div>' +
           campo("cartao", "Número do cartão", d.cartao, 'inputmode="numeric" autocomplete="cc-number" maxlength="19"', "Número inválido") +
           campo("nomecartao", "Nome impresso no cartão", d.nomecartao || (d.nome || "").toUpperCase(), 'autocomplete="cc-name"') +
@@ -463,10 +496,36 @@
           $("#validade").addEventListener("input", function (e) { var v = so(e.target.value).slice(0, 4); e.target.value = v.length > 2 ? v.slice(0, 2) + "/" + v.slice(2) : v; });
           $("#parc").onchange = function () { parc = +this.value; salva(); var rr = resumoLateral(d, metodo, parc); $(".resumo").outerHTML = rr.html; $("#pagar").textContent = "Pagar " + brl(rr.total); };
         }
-        $("#pagar").onclick = pagar;
+        if (metodo === "financiamento") {
+          $("#analisar").onclick = function () {
+            var renda = +$("#fin-renda").value, entrada = +$("#fin-entrada").value, prazo = +$("#fin-prazo").value, nasc = $("#fin-nascimento").value;
+            var data = new Date(nasc + "T00:00:00"), hoje = new Date(), idade = hoje.getFullYear() - data.getFullYear() - (hoje.getMonth() < data.getMonth() || (hoje.getMonth() === data.getMonth() && hoje.getDate() < data.getDate()) ? 1 : 0);
+            var ok = marca("fin-renda", isFinite(renda) && renda > 0) & marca("fin-entrada", entrada >= C.entradaMin && entrada < 100) & marca("fin-nascimento", !isNaN(data.getTime()) && data <= hoje);
+            if (!$("#fin-ocupacao").value) { $("#fin-resultado").innerHTML = '<div class="alerta erro">Selecione a ocupação.</div>'; return; }
+            if (!ok) return;
+            d.finRenda = renda; d.finEntrada = entrada; d.finPrazo = prazo; d.finNascimento = nasc; d.finOcupacao = $("#fin-ocupacao").value; salva();
+            var box = $("#fin-resultado");
+            if (idade < C.idadeMin) { box.innerHTML = '<div class="alerta erro">Financiamento disponível a partir de 18 anos.</div>'; return; }
+            var valor = subtotal(carrinho()) + freteTotal(d.cep, carrinho()).valor, f = financiar(valor, entrada, prazo);
+            if (f.parcela > renda * C.rendaMax) {
+              var minimo = financiar(valor, 99.999999, prazo);
+              var sugestao = 'Tente um prazo maior. As tarifas impedem a aprovação neste prazo para a renda informada.';
+              if (minimo.parcela <= renda * C.rendaMax) {
+                var baixo = entrada, alto = 100;
+                for (var i = 0; i < 50; i++) { var meio = (baixo + alto) / 2; if (financiar(valor, meio, prazo).parcela > renda * C.rendaMax) baixo = meio; else alto = meio; }
+                var percentual = Math.ceil(alto * 100) / 100;
+                if (percentual < 100) sugestao = 'Entrada mínima para este prazo: ' + percentual.toFixed(2).replace('.', ',') + '%. Você também pode tentar um prazo maior.';
+              }
+              box.innerHTML = '<div class="alerta erro">Parcela acima de 30% da sua renda. ' + sugestao + '</div>'; return;
+            }
+            box.innerHTML = '<div class="alerta ok">Financiamento aprovado em teste.</div>' + resumoFin(f) + '<label class="check"><input type="checkbox" id="fin-aceite"> Li e aceito o contrato de financiamento (teste)</label><button class="btn amber block" id="pagar" style="margin-top:12px">Pagar entrada no Pix</button>';
+            $("#pagar").onclick = function () { if (!$("#fin-aceite").checked) { $("#pag-msg").innerHTML = '<div class="alerta erro">Aceite o contrato para continuar.</div>'; return; } pagar(f); };
+          };
+          ["fin-renda", "fin-ocupacao", "fin-nascimento", "fin-entrada", "fin-prazo"].forEach(function (id) { $("#" + id).addEventListener("input", function () { $("#fin-resultado").innerHTML = ""; }); });
+        } else $("#pagar").onclick = pagar;
       }
     }
-    function pagar() {
+    function pagar(fin) {
       var msg = $("#pag-msg"), r = resumoLateral(d, metodo, parc), c2 = carrinho();
       for (var i = 0; i < c2.length; i++) if (c2[i].qtd > estoque(c2[i].sku)) { msg.innerHTML = '<div class="alerta erro">Uma das motos acabou de esgotar. Revise o carrinho.</div>'; return; }
       var dadosCartao = null;
@@ -490,16 +549,17 @@
         endereco: { cep: d.cep, rua: d.rua, num: d.num, compl: d.compl, bairro: d.bairro, cidade: d.cidade, uf: d.uf },
         itens: c2.map(function (i) { var x = corPorSku(i.sku); return { id: x.p.id, sku: i.sku, nome: x.p.nome, cor: x.c.nome, preco: x.p.preco, qtd: i.qtd }; }),
         subtotal: r.sub, frete: r.frete.valor, regiao: r.frete.regiao, prazo: r.frete.prazo, desconto: r.desc, juros: Math.round(r.juros * 100) / 100, total: Math.round(r.total * 100) / 100,
-        pagamento: metodo === "pix" ? { metodo: "pix", expira: agora() + R.pixValidadeMin * 60000 } : { metodo: "cartao", bandeira: bandeira(dadosCartao.numero), final4: dadosCartao.numero.slice(-4), parcelas: parc, valorParcela: r.parc.valor, token: "tok_test_" + Math.random().toString(36).slice(2, 12) },
+        pagamento: metodo === "financiamento" ? { metodo: "financiamento", parcelas: fin.prazo, entrada: fin.entrada, valorParcela: fin.parcela, cet: fin.cet, financiado: fin.financiado, iof: fin.iof, totalContrato: fin.total, renda: d.finRenda, ocupacao: d.finOcupacao, nascimento: d.finNascimento, expira: agora() + R.pixValidadeMin * 60000 } : metodo === "pix" ? { metodo: "pix", expira: agora() + R.pixValidadeMin * 60000 } : { metodo: "cartao", bandeira: bandeira(dadosCartao.numero), final4: dadosCartao.numero.slice(-4), parcelas: parc, valorParcela: r.parc.valor, token: "tok_test_" + Math.random().toString(36).slice(2, 12) },
         antifraude: af, eventos: [],
       };
-      o.status = metodo === "pix" ? "aguardando_pix" : af.status === "revisao" ? "em_analise" : "pago";
+      o.status = metodo !== "cartao" ? "aguardando_pix" : af.status === "revisao" ? "em_analise" : "pago";
       registrar(o, "criado", "Pedido recebido");
       baixaEstoque(o); salvarPedido(o); salvarCarrinho([]);
       d.convertido = o.id; d.passo = 1; d.lembrete = null; d.cartao = ""; d.nomecartao = ""; d.validade = ""; gravar("cad_checkout", d); evento("pedido"); try { if (!sessionStorage.getItem("cad_conv")) { sessionStorage.setItem("cad_conv", "1"); evento("sessoes_conv"); } } catch (e) {}
       enviarEmail(o.cliente.email, "Recebemos seu pedido " + o.id, emailBase("Pedido recebido",
-        "<p>Olá, " + esc(o.cliente.nome.split(" ")[0]) + ". Recebemos seu pedido <b>" + o.id + "</b>." + (o.status === "aguardando_pix" ? " Assim que o Pix for pago, separamos a moto." : "") + "</p>" + tabelaItens(o) +
+        "<p>Olá, " + esc(o.cliente.nome.split(" ")[0]) + ". Recebemos seu pedido <b>" + o.id + "</b>." + (o.status === "aguardando_pix" ? " Assim que o Pix for pago, separamos a moto." : "") + "</p>" + tabelaItens(o) + (metodo === "financiamento" ? "<p>" + detalhesPagamento(o.pagamento) + "</p>" : "") +
         "<p style='margin-top:12px'>Entrega em " + esc(o.endereco.rua) + ", " + esc(o.endereco.num) + " · " + esc(o.endereco.cidade) + "/" + esc(o.endereco.uf) + ".</p><p><a class='btn sm' href='#/pedido/" + o.id + "'>Ver pedido</a></p>"), "recebido");
+      if (metodo === "financiamento") enviarEmail(o.cliente.email, "Financiamento aprovado: pedido " + o.id, emailBase("Financiamento aprovado", "<p>" + detalhesPagamento(o.pagamento) + "</p>" + resumoFin(fin) + "<p>Pague a entrada no Pix de teste para continuar.</p>"), "financiamento");
       if (o.status === "pago") aprovar(o);
       if (o.status === "em_analise") enviarEmail(o.cliente.email, "Pedido " + o.id + " em análise de segurança", emailBase("Seu pedido está em análise",
         "<p>Para proteger você, algumas compras passam por uma conferência extra (até 24 horas úteis). Motivo: " + af.motivos.map(esc).join("; ") + ".</p><p>Nenhum valor foi cobrado ainda. Se preferir, pague com Pix e o pedido é liberado na hora.</p>"), "analise");
@@ -515,10 +575,11 @@
     var status = { aguardando_pix: ["amber", "Aguardando Pix"], em_analise: ["amber", "Em análise antifraude"], pago: ["", "Pago"], enviado: ["", "Enviado"], entregue: ["", "Entregue"], cancelado: ["red", "Cancelado"] }[o.status];
     var podeDesistir = o.status === "entregue" && agora() - (o.entregueEm || 0) <= 7 * 86400000 || o.status === "pago" || o.status === "enviado" || o.status === "em_analise";
     var html = '<div class="wrap"><div class="duas"><div class="caixa"><span class="tag ' + status[0] + '">' + status[1] + "</span><h1 style=\"margin-top:10px;font-size:34px\">Pedido " + o.id + "</h1>" +
-      '<p class="mute">Feito em ' + dataBR(o.data) + " · " + (o.pagamento.metodo === "pix" ? "Pix" : o.pagamento.bandeira + " final " + o.pagamento.final4 + " · " + o.pagamento.parcelas + "x de " + brl(o.pagamento.valorParcela)) + "</p>";
+      '<p class="mute">Feito em ' + dataBR(o.data) + " · " + detalhesPagamento(o.pagamento) + "</p>";
     if (o.status === "aguardando_pix") {
-      var copia = "00020126580014BR.GOV.BCB.PIX0136" + "teste-cadency-" + o.id.toLowerCase() + "5204000053039865406" + o.total.toFixed(2) + "5802BR5913CADENCY TESTE6013JUIZ DE FORA62070503***6304TEST";
-      html += '<div class="alerta warn">Pix de teste: nenhum valor real será cobrado.</div><div class="pix-box"><div class="pix-qr" id="qr"></div><div><p style="font:800 26px var(--h);margin:0">' + brl(o.total) + '</p><p>Expira em <b id="cont"></b></p><div class="copia" id="copia">' + esc(copia) + '</div><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn sm ghost" id="copiar">Copiar código</button><button class="btn sm" id="simpix">Simular pagamento recebido</button></div></div></div>';
+      var valorPix = o.pagamento.metodo === "financiamento" ? o.pagamento.entrada : o.total;
+      var copia = "00020126580014BR.GOV.BCB.PIX0136" + "teste-cadency-" + o.id.toLowerCase() + "5204000053039865406" + valorPix.toFixed(2) + "5802BR5913CADENCY TESTE6013JUIZ DE FORA62070503***6304TEST";
+      html += '<div class="alerta warn">Pix de teste: nenhum valor real será cobrado.</div><div class="pix-box"><div class="pix-qr" id="qr"></div><div><p style="font:800 26px var(--h);margin:0">' + brl(valorPix) + '</p><p>Expira em <b id="cont"></b></p><div class="copia" id="copia">' + esc(copia) + '</div><div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap"><button class="btn sm ghost" id="copiar">Copiar código</button><button class="btn sm" id="simpix">Simular pagamento recebido</button></div></div></div>';
     }
     html += '<h3 style="margin-top:24px">Acompanhamento</h3><ul class="timeline">' + etapas.map(function (e) {
       var ev = o.eventos.filter(function (x) { return x.tipo === e[0]; })[0];
@@ -529,7 +590,7 @@
     html += '<div class="caixa" style="background:#FAF9F6;margin-top:18px;box-shadow:none;border:1.5px dashed var(--line)"><b>Simulador de pós-venda (modo teste)</b><p class="small mute">Avança o pedido para gerar os e-mails da sequência: confirmação, rastreio, entrega, avaliação (D+7) e recompra/revisão (D+30).</p><div style="display:flex;gap:8px;flex-wrap:wrap" id="sim"></div></div>' +
       (podeDesistir && o.status !== "cancelado" ? '<p style="margin-top:16px"><button class="btn sm ghost" id="desistir">Desistir da compra (art. 49 do CDC)</button></p>' : "") +
       '<p class="small mute" style="margin-top:10px">Os e-mails ficam na <a href="#/emails">caixa de e-mails de teste</a>.</p></div>';
-    html += '<aside class="caixa resumo"><h3>Resumo</h3>' + tabelaItens(o) + '<p class="small mute" style="margin-top:12px">Entrega: ' + esc(o.endereco.rua) + ", " + esc(o.endereco.num) + (o.endereco.compl ? " " + esc(o.endereco.compl) : "") + " · " + esc(o.endereco.bairro) + " · " + esc(o.endereco.cidade) + "/" + esc(o.endereco.uf) + " · CEP " + esc(o.endereco.cep) + "</p></aside></div>" + blocoRecomendacao(o.itens[0].id, "Acessórios e motos para a próxima compra") + "</div>";
+    html += '<aside class="caixa resumo"><h3>Resumo</h3>' + tabelaItens(o) + (o.pagamento.metodo === 'financiamento' ? resumoFin({ entrada: o.pagamento.entrada, financiado: o.pagamento.financiado, iof: o.pagamento.iof, prazo: o.pagamento.parcelas, parcela: o.pagamento.valorParcela, cet: o.pagamento.cet, total: o.pagamento.totalContrato }) : '') + '<p class="small mute" style="margin-top:12px">Entrega: ' + esc(o.endereco.rua) + ", " + esc(o.endereco.num) + (o.endereco.compl ? " " + esc(o.endereco.compl) : "") + " · " + esc(o.endereco.bairro) + " · " + esc(o.endereco.cidade) + "/" + esc(o.endereco.uf) + " · CEP " + esc(o.endereco.cep) + "</p></aside></div>" + blocoRecomendacao(o.itens[0].id, "Acessórios e motos para a próxima compra") + "</div>";
     app.innerHTML = html;
     ligaPers();
 
@@ -570,7 +631,7 @@
     }
     if ($("#desistir")) $("#desistir").onclick = function () {
       o.status = "cancelado"; o.motivoCancelamento = "Direito de arrependimento (art. 49 do CDC): reembolso integral de " + brl(o.total) + " incluindo frete."; registrar(o, "cancelado", "Cancelado"); devolveEstoque(o); salvarPedido(o);
-      enviarEmail(o.cliente.email, "Desistência confirmada: pedido " + o.id, emailBase("Recebemos sua desistência", "<p>Vamos buscar a moto no endereço de entrega sem custo, em até 5 dias úteis. O reembolso integral de <b>" + brl(o.total) + "</b>, incluindo o frete, é feito no mesmo meio de pagamento" + (o.pagamento.metodo === "pix" ? " (Pix para a conta de origem)" : " (estorno no cartão, que aparece em até 2 faturas)") + ".</p>"), "reembolso");
+      enviarEmail(o.cliente.email, "Desistência confirmada: pedido " + o.id, emailBase("Recebemos sua desistência", "<p>Vamos buscar a moto no endereço de entrega sem custo, em até 5 dias úteis. O reembolso integral de <b>" + brl(o.total) + "</b>, incluindo o frete, é feito no mesmo meio de pagamento" + (o.pagamento.metodo === "financiamento" ? " (entrada por Pix e encerramento do financiamento de teste)" : o.pagamento.metodo === "pix" ? " (Pix para a conta de origem)" : " (estorno no cartão, que aparece em até 2 faturas)") + ".</p>"), "reembolso");
       toast("Desistência registrada."); rota();
     };
   }
@@ -631,6 +692,7 @@
   function privacidade() {
     var linhas = [
       ["Nome, CPF, e-mail, celular e endereço", "Emitir a nota fiscal, entregar a moto e falar sobre o pedido", "Execução de contrato (art. 7º, V) e obrigação legal fiscal (art. 7º, II)", "5 anos após a compra (prazo fiscal)"],
+      ["Renda, ocupação e data de nascimento", "Análise de crédito do financiamento", "Procedimentos preliminares do contrato a pedido do titular e proteção do crédito (art. 7º, V e X)", "5 anos após o fim do contrato"],
       ["Últimos 4 dígitos e token do cartão", "Processar pagamento e estornos (o número completo fica só no gateway)", "Execução de contrato (art. 7º, V)", "5 anos"],
       ["CPF, valor do pedido e histórico de recusas", "Antifraude: limite por CPF, recusas repetidas, nome do cartão", "Legítimo interesse e proteção do crédito (art. 7º, IX e X)", "Recusas: 30 dias · pedidos: 5 anos"],
       ["E-mail informado no checkout não concluído", "Enviar um lembrete do carrinho abandonado", "Legítimo interesse (art. 7º, IX), com opção de sair", "48 horas"],
@@ -642,7 +704,7 @@
     texto('<span class="tag">LGPD</span><h1 style="margin-top:12px">Aviso de privacidade</h1><p class="mute">Versão 1.0 · vigente desde 19/11/2026 · Lei nº 13.709/2018 (LGPD)</p>' +
       "<p>Controlador: " + esc(L.razao) + ", CNPJ " + esc(L.cnpj) + ", " + esc(L.endereco) + ". Encarregado de dados (DPO): <a href=\"mailto:" + L.dpo + "\">" + L.dpo + "</a>.</p>" +
       "<h2>Quais dados usamos, para quê e com qual base legal</h2><div style=\"overflow:auto\"><table><tr><th>Dado</th><th>Finalidade</th><th>Base legal</th><th>Retenção</th></tr>" + linhas.map(function (l) { return "<tr><td>" + l.join("</td><td>") + "</td></tr>"; }).join("") + "</table></div>" +
-      "<h2>Com quem compartilhamos</h2><ul><li>Gateway de pagamento (processa cartão e Pix).</li><li>Transportadora (nome, telefone e endereço para a entrega).</li><li>Contabilidade e Receita (nota fiscal).</li></ul><p>Não vendemos dados pessoais.</p>" +
+      "<h2>Com quem compartilhamos</h2><ul><li>Gateway de pagamento (processa cartão e Pix).</li><li>Em uma operação real, renda, ocupação e data de nascimento seriam compartilhadas com o banco parceiro.</li><li>Transportadora (nome, telefone e endereço para a entrega).</li><li>Contabilidade e Receita (nota fiscal).</li></ul><p>Não vendemos dados pessoais.</p>" +
       "<h2>Inteligência artificial</h2><p>As recomendações “Quem viu esta moto também olhou” comparam atributos dos produtos (categoria, tipo de motor, faixa de preço e uso) e não usam dados pessoais. Só quando você aceita cookies de personalização, o histórico das últimas motos vistas, guardado no seu navegador, entra no cálculo. Nenhuma decisão de crédito ou preço é tomada por IA.</p>" +
       "<h2>Seus direitos (art. 18)</h2><p>Você pode pedir confirmação e acesso aos dados, correção, anonimização ou exclusão, portabilidade, informação sobre compartilhamento e revogação do consentimento. Use o canal <a href=\"#/meus-dados\">Meus dados</a> ou escreva para " + L.dpo + ". Respondemos em até 15 dias. Você também pode reclamar à ANPD.</p>" +
       "<h2>Segurança</h2><p>Site com HTTPS (TLS), painel do lojista e gateway com autenticação em dois fatores e número de cartão nunca armazenado pela loja.</p>");
@@ -720,7 +782,7 @@
     app.innerHTML = '<div class="wrap"><div style="display:flex;justify-content:space-between;align-items:center;margin:28px 0 18px;gap:12px;flex-wrap:wrap"><div><span class="tag">2FA ativo</span><h1 style="margin:8px 0 0">Painel do lojista</h1></div><div style="display:flex;gap:8px"><button class="btn sm ghost" id="zerar">Zerar dados de teste</button><button class="btn sm dark" id="sair">Sair</button></div></div>' +
       '<div class="kpis"><div><span class="mute small">Pedidos pagos</span><b>' + pagos.length + '</b></div><div><span class="mute small">Receita aprovada</span><b>' + brl(receita) + '</b></div><div><span class="mute small">Ticket médio</span><b>' + (pagos.length ? brl(receita / pagos.length) : "—") + '</b></div><div><span class="mute small">Conversão (sessões com pedido)</span><b>' + (an && an.visitas ? ((an.sessoes_conv || 0) / an.visitas * 100).toFixed(1) + "%" : "—") + "</b></div></div>" +
       '<div class="caixa" style="margin-bottom:18px"><h3>Pedidos</h3><div style="overflow:auto"><table><tr><th>Pedido</th><th>Cliente</th><th>Itens</th><th>Pagamento</th><th>Total</th><th>Antifraude</th><th>Status</th></tr>' +
-      (ps.length ? ps.map(function (o) { return '<tr><td><a href="#/pedido/' + o.id + '">' + o.id + "</a><br><span class=\"small mute\">" + dataBR(o.data) + "</span></td><td>" + esc(o.cliente.nome) + "<br><span class=\"small mute\">" + esc(o.endereco.cidade) + "/" + esc(o.endereco.uf) + "</span></td><td>" + o.itens.map(function (i) { return i.qtd + "× " + esc(i.sku); }).join("<br>") + "</td><td>" + (o.pagamento.metodo === "pix" ? "Pix" : o.pagamento.bandeira + " " + o.pagamento.parcelas + "x") + "</td><td>" + brl(o.total) + "</td><td>" + (o.antifraude.status === "aprovado" ? '<span class="tag">ok</span>' : '<span class="tag amber">revisão</span><br><span class="small">' + o.antifraude.motivos.map(esc).join("; ") + "</span>") + "</td><td>" + stLabel[o.status] + "</td></tr>"; }).join("") : '<tr><td colspan="7" class="mute">Nenhum pedido ainda.</td></tr>') + "</table></div></div>" +
+      (ps.length ? ps.map(function (o) { return '<tr><td><a href="#/pedido/' + o.id + '">' + o.id + "</a><br><span class=\"small mute\">" + dataBR(o.data) + "</span></td><td>" + esc(o.cliente.nome) + "<br><span class=\"small mute\">" + esc(o.endereco.cidade) + "/" + esc(o.endereco.uf) + "</span></td><td>" + o.itens.map(function (i) { return i.qtd + "× " + esc(i.sku); }).join("<br>") + "</td><td>" + detalhesPagamento(o.pagamento) + "</td><td>" + brl(o.total) + "</td><td>" + (o.antifraude.status === "aprovado" ? '<span class="tag">ok</span>' : '<span class="tag amber">revisão</span><br><span class="small">' + o.antifraude.motivos.map(esc).join("; ") + "</span>") + "</td><td>" + stLabel[o.status] + "</td></tr>"; }).join("") : '<tr><td colspan="7" class="mute">Nenhum pedido ainda.</td></tr>') + "</table></div></div>" +
       '<div class="duas" style="grid-template-columns:1fr 1fr;margin-top:0"><div class="caixa"><h3>Estoque por SKU</h3><table><tr><th>SKU</th><th>Modelo · cor</th><th>Estoque</th></tr>' + P.map(function (p) { return p.cores.map(function (c) { var e = estoque(c.sku); return "<tr><td>" + c.sku + "</td><td>" + esc(p.nome) + " · " + esc(c.nome) + '</td><td style="' + (e <= 5 ? "color:#8A5A10;font-weight:700" : "") + '">' + e + "</td></tr>"; }).join(""); }).join("") + "</table></div>" +
       '<div><div class="caixa" style="margin-bottom:18px"><h3>Funil (cookies analíticos)</h3>' + (an ? "<table>" + [["Visitas", an.visitas], ["Visualizações de produto", an.produto], ["Adições ao carrinho", an.carrinho], ["Checkouts iniciados", an.checkout], ["Pedidos", an.pedido]].map(function (x) { return "<tr><td>" + x[0] + "</td><td>" + (x[1] || 0) + "</td></tr>"; }).join("") + "</table>" : '<p class="mute small">Sem dados: o visitante não consentiu com cookies analíticos.</p>') + "</div>" +
       '<div class="caixa"><h3>Pedidos LGPD</h3>' + (lg.length ? "<table><tr><th>Protocolo</th><th>Pedido</th><th>Data</th></tr>" + lg.map(function (r) { return "<tr><td>" + r.prot + "</td><td>" + esc(r.tipo) + "<br><span class='small mute'>" + esc(r.email) + "</span></td><td>" + diaBR(r.t) + "</td></tr>"; }).join("") + "</table>" : '<p class="mute small">Nenhum pedido aberto.</p>') + "</div></div></div></div>";

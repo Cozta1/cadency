@@ -144,3 +144,11 @@ window.REGRAS = {
   limitePorCpf: 2,            // no máximo 2 motos por CPF por pedido
   pixValidadeMin: 30,
 };
+
+/* Fonte: Yamaha, exemplo de CDC da Fazer FZ25 Connected, campanha de 01/11 a 31/12/2026, acesso em 24/11/2026: https://yamaha-motor.com.br/product/fazer-fz25-connected-774117 */
+window.FINANCIAMENTO = {
+  jurosMes: 0.0199, prazos: [12, 24, 36, 48], entradaMin: 20,
+  cadastro: 840, registro: 378.37, iofFixo: 0.0038, iofDia: 0.000082, diasMax: 365,
+  rendaMax: 0.30, idadeMin: 18, // premissa do grupo
+  pagamentoLoja: "à vista pelo banco", entradaPagamento: "Pix" // premissa do grupo
+};
