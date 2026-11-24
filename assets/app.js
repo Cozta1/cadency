@@ -3,6 +3,8 @@
   "use strict";
   var L = window.LOJA, P = window.PRODUTOS, F = window.FRETE, R = window.REGRAS;
   var C = window.FINANCIAMENTO;
+  var MODELOS3D = ['andes-900','andes-900-dakar','atacama-1250-expedicao','c1000rr','c1000rr-fundadores','c1000rr-street-hunter','c300r','c600r','c600rr-race','rota-110','rota-160','rota-160-cargo','serra-400'];
+  var script3D, erro3D = false;
   var app = document.getElementById("app");
 
   /* ---------- utilidades ---------- */
@@ -318,10 +320,10 @@
   function paginaProduto(id) {
     var p = produto(id); if (!p) return naoEncontrado();
     registraVisita(id); evento("produto");
-    var corSel = p.cores.filter(function (c) { return estoque(c.sku) > 0; })[0] || p.cores[0], qtd = 1;
+    var corSel = p.cores.filter(function (c) { return estoque(c.sku) > 0; })[0] || p.cores[0], qtd = 1, exibe3D = false;
     var cepSalvo = ler("cad_cep", "");
     app.innerHTML = '<div class="wrap"><p class="migalha"><a href="#/">Início</a> / <a href="#/catalogo?cat=' + encodeURIComponent(p.categoria) + '">' + esc(p.categoria) + "</a> / " + esc(p.nome) + "</p>" +
-      '<div class="prod"><div class="galeria"><div class="principal" id="foto"></div><div class="thumbs" id="thumbs"></div><p class="small mute" style="margin-top:8px">Imagens geradas por IA. Produto fictício.</p></div>' +
+      '<div class="prod"><div class="galeria"><div class="principal" id="foto"></div><p class="small mute legenda-3d" id="legenda-3d" hidden></p><div class="thumbs" id="thumbs"></div>' + (MODELOS3D.indexOf(p.id) >= 0 ? '<button class="btn ghost ver-3d" id="ver-3d" type="button">Ver em 3D</button>' : '') + '<p class="small mute" style="margin-top:8px">Imagens geradas por IA. Produto fictício.</p></div>' +
       '<div class="compra"><span class="tag gray">' + esc(p.categoria) + "</span><h1 style=\"margin-top:10px\">" + esc(p.nome) + '</h1><p class="mute">' + esc(p.motor) + '</p>' +
       '<div class="preco-grande">' + brl(p.preco) + '</div><p><b>' + brl(p.preco * (1 - R.pixDesconto)) + '</b> no Pix, 3% de desconto<br>ou 10x de ' + brl(p.preco / 10) + ' sem juros no cartão</p>' +
       '<label>Cor: <span id="cor-nome"></span></label><div class="cores" id="cores"></div>' +
@@ -337,11 +339,14 @@
       '<section class="ficha-secao" id="ficha"><h2>Ficha técnica</h2><dl>' + Object.keys(p.ficha).map(function (k) { return '<div><dt>' + esc(k) + '</dt><dd>' + esc(p.ficha[k]) + '</dd></div>'; }).join('') + '</dl></section>' +
       '<section class="entrega-produto" id="entrega-produto"><div><b>Sai do galpão em Juiz de Fora</b><p>Pronta entrega com nota fiscal.</p></div><div><b>Frete e prazo antes</b><p>Calcule pelo CEP antes de pagar.</p></div><div><b>Mudou de ideia?</b><p>Você tem 7 dias para desistir.</p><a href="#/trocas">Ver política</a></div></section>' + blocoRecomendacao(id) + "</div>";
     function desenha() {
-      $("#foto").innerHTML = img(p, corSel, true);
+      $("#foto").innerHTML = exibe3D ? '<model-viewer src="assets/3d/' + esc(p.id) + '.glb" camera-controls camera-orbit="90deg 80deg 105%" touch-action="pan-y" auto-rotate shadow-intensity="1" alt="' + esc(p.nome) + ' em 3D"></model-viewer>' : img(p, corSel, true);
+      $("#legenda-3d").hidden = !exibe3D;
+      $("#legenda-3d").textContent = exibe3D ? 'Modelo 3D gerado por IA, na cor ' + p.cores[0].nome + '. Arraste para girar.' + (erro3D ? ' Não foi possível carregar o visualizador.' : '') : '';
+      if ($("#ver-3d")) $("#ver-3d").textContent = exibe3D ? 'Ver foto' : 'Ver em 3D';
       $("#thumbs").innerHTML = p.cores.map(function (c, i) { return '<button class="' + (c.sku === corSel.sku ? "on" : "") + '" data-i="' + i + '" aria-label="Ver ' + esc(c.nome) + '" aria-pressed="' + (c.sku === corSel.sku) + '">' + img(p, c) + "</button>"; }).join("");
-      $$("#thumbs button").forEach(function (b) { b.onclick = function () { corSel = p.cores[+b.dataset.i]; qtd = 1; desenha(); }; });
+      $$("#thumbs button").forEach(function (b) { b.onclick = function () { corSel = p.cores[+b.dataset.i]; qtd = 1; exibe3D = false; desenha(); }; });
       $("#cores").innerHTML = p.cores.map(function (c, i) { var e = estoque(c.sku); return '<button class="cor ' + (c.sku === corSel.sku ? "on" : "") + '" data-i="' + i + '"' + (e ? "" : ' style="opacity:.5"') + '><i style="background:' + c.hex + '"></i>' + esc(c.nome) + (e ? "" : " (esgotada)") + "</button>"; }).join("");
-      $$("#cores .cor").forEach(function (b) { b.onclick = function () { corSel = p.cores[+b.dataset.i]; qtd = 1; desenha(); }; });
+      $$("#cores .cor").forEach(function (b) { b.onclick = function () { corSel = p.cores[+b.dataset.i]; qtd = 1; exibe3D = false; desenha(); }; });
       var e = estoque(corSel.sku);
       $("#cor-nome").textContent = corSel.nome; $("#sku").textContent = corSel.sku;
       $("#est").innerHTML = e ? (e <= 5 ? '<b style="color:#8A5A10">' + e + " em estoque</b>" : e + " em estoque") : '<b style="color:var(--red)">Esgotada nesta cor</b>';
@@ -349,6 +354,16 @@
       $("#tab-parc").innerHTML = "<tr><th>Parcelas</th><th>Valor</th><th>Total</th></tr>" + parcelas(p.preco).map(function (x) { return "<tr><td>" + x.n + "x " + (x.juros ? "com juros" : "sem juros") + "</td><td>" + brl(x.valor) + "</td><td>" + brl(x.total) + "</td></tr>"; }).join("");
     }
     desenha();
+    if ($("#ver-3d")) $("#ver-3d").onclick = function () {
+      exibe3D = !exibe3D;
+      if (exibe3D && !script3D) {
+        script3D = document.createElement('script'); script3D.type = 'module';
+        script3D.src = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js';
+        script3D.onerror = function () { erro3D = true; var legenda = $("#legenda-3d"); if (legenda && !legenda.hidden) legenda.textContent += ' Não foi possível carregar o visualizador.'; };
+        document.head.appendChild(script3D);
+      }
+      desenha();
+    };
     function simProduto() {
       var entrada = +$("#sim-entrada").value;
       $("#sim-resultado").innerHTML = entrada >= C.entradaMin && entrada < 100 ? resumoFin(financiar(p.preco, entrada, +$("#sim-prazo").value)) : '<p class="alerta erro">Informe entrada de 20% a menos de 100%.</p>';

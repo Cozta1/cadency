@@ -248,3 +248,7 @@ body{font-size:16px;line-height:1.5} a{color:var(--ink)} .wrap{max-width:1280px;
 .foto-item{display:inline-block;width:72px;vertical-align:middle;margin:0 10px 8px 0;background:var(--well)}
 .foto-item img,.foto-item svg{width:100%;height:auto}
 .galeria .thumbs{flex-wrap:wrap}
+.galeria model-viewer{display:block;width:100%;height:auto;aspect-ratio:1000/747;background:var(--well);touch-action:pan-y;--progress-bar-height:0}
+.galeria model-viewer::part(default-progress-bar){display:none}
+.galeria .ver-3d{margin-top:12px}
+.galeria .legenda-3d:not([hidden]){margin:8px 0 0}
