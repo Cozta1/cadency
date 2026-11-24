@@ -22,6 +22,7 @@
   function produto(id) { for (var i = 0; i < P.length; i++) if (P[i].id === id) return P[i]; return null; }
   function corPorSku(sku) { for (var i = 0; i < P.length; i++) for (var j = 0; j < P[i].cores.length; j++) if (P[i].cores[j].sku === sku) return { p: P[i], c: P[i].cores[j] }; return null; }
   function img(p, hex, v) { return window.motoSVG(p.tipo, hex || p.cores[0].hex, v); }
+  function logo(claro) { var cor = claro ? '#FFFFFF' : '#15171C'; return '<svg viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path d="M48.85 46.14A22 22 0 1 1 39.52 11.32" fill="none" stroke="' + cor + '" stroke-width="11"/><path d="M39.52 11.32A22 22 0 0 1 48.85 17.86" fill="none" stroke="#F2A541" stroke-width="11"/><path d="M27 32L32 28L47 31L47 33L32 36Z" fill="' + cor + '" transform="rotate(-40 32 32)"/><circle cx="32" cy="32" r="4" fill="' + cor + '"/></svg><span>CADENCY</span>'; }
 
   /* ---------- consentimento (LGPD) ---------- */
   function consent() { return ler("cad_consent", null); }
@@ -128,7 +129,7 @@
     gravar("cad_emails", e); atualizaBadge();
   }
   function emailBase(titulo, html) {
-    return '<div class="email-corpo"><p style="font:800 20px var(--h)">Cad<b style="color:var(--amber)">ency</b></p><h3>' + titulo + "</h3>" + html +
+    return '<div class="email-corpo"><div class="logo">' + logo(false) + '</div><h3>' + titulo + "</h3>" + html +
       '<p class="small mute" style="margin-top:20px;border-top:1px solid var(--line);padding-top:12px">' + esc(L.razao) + " · CNPJ " + esc(L.cnpj) + "<br>" + esc(L.endereco) + "<br>E-mail de teste gerado pela loja acadêmica. Para não receber lembretes, responda SAIR ou acesse <a href='#/meus-dados'>Meus dados</a>.</p></div>";
   }
   function tabelaItens(o) {
@@ -197,15 +198,15 @@
   }
   function cabecalho() {
     $("#topo").innerHTML = '<div class="wrap topo-in">' +
-      '<a class="logo" href="#/" aria-label="Cadency, início"><svg width="34" height="34" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#262A32"/><path d="M18 42a8 8 0 1 0 .1 0M46 42a8 8 0 1 0 .1 0M18 42l10-14h12l6 14M28 28l-4-6h-6" stroke="#F2A541" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cad<b>ency</b></span></a>' +
-      '<form class="busca" id="form-busca" role="search"><input id="q" type="search" placeholder="Buscar moto, tipo ou uso (ex.: elétrica, entrega)" aria-label="Buscar produtos"><button>Buscar</button></form>' +
-      '<nav class="nav"><a class="so-desk" href="#/catalogo">Motos</a><a class="so-desk" href="#/frete">Frete</a><a class="so-desk" href="#/emails" title="Caixa de e-mails de teste">E-mails <span class="badge" id="badge-mail" style="position:static;display:none"></span></a>' +
-      '<a class="carrinho-link" href="#/carrinho">Carrinho<span class="badge" id="badge" style="display:none"></span></a></nav></div>';
+      '<a class="logo" href="#/" aria-label="Cadency, início">' + logo(false) + '</a>' +
+      '<nav class="nav"><a href="#/catalogo">Motos</a><a href="#/catalogo?cat=El%C3%A9tricas">Elétricas</a><a href="#/catalogo?cat=Edi%C3%A7%C3%B5es%20especiais">Edições especiais</a><a href="#/frete">Entrega e frete</a><a href="#/contato">Ajuda</a></nav>' +
+      '<form class="busca" id="form-busca" role="search"><input id="q" type="search" placeholder="Buscar moto" aria-label="Buscar produtos"><button aria-label="Buscar">⌕</button></form>' +
+      '<a class="icone-link" href="#/emails" aria-label="E-mails de teste"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-5 3-7 8-7s8 2 8 7"/></svg><span class="badge" id="badge-mail" style="display:none"></span></a><a class="carrinho-link" href="#/carrinho" aria-label="Carrinho"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 3h3l2 12h12l3-9H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg><span class="badge" id="badge" style="display:none"></span></a></div>';
     $("#form-busca").addEventListener("submit", function (e) { e.preventDefault(); location.hash = "#/catalogo?q=" + encodeURIComponent($("#q").value); });
     atualizaBadge();
   }
   function rodape() {
-    $("#rodape").innerHTML = '<div class="wrap rod-in"><div><h4>Cadency</h4><p>Motos de entrada, média e alta cilindrada e elétricas, com estoque real, preço final na tela e prazo de entrega antes do pagamento.</p>' +
+    $("#rodape").innerHTML = '<div class="wrap rod-in"><div><a class="logo" href="#/">' + logo(true) + '</a><p>Motos de entrada, média e alta cilindrada e elétricas, com estoque real, preço final na tela e prazo de entrega antes do pagamento.</p>' +
       '<div class="selos"><span>Pix</span><span>Visa</span><span>Mastercard</span><span>Conexão HTTPS</span><span>LGPD</span></div></div>' +
       '<div><h4>Compra</h4><a href="#/catalogo">Todas as motos</a><a href="#/frete">Frete e prazos</a><a href="#/trocas">Trocas e devoluções</a><a href="#/carrinho">Carrinho</a></div>' +
       '<div><h4>Institucional</h4><a href="#/sobre">Sobre nós</a><a href="#/contato">Contato</a><a href="#/privacidade">Privacidade e LGPD</a><a href="#/cookies">Política de cookies</a><a href="#" id="abrir-cookies">Preferências de cookies</a></div>' +
@@ -221,7 +222,7 @@
     if (consent()) { box.innerHTML = ""; return; }
     box.innerHTML = '<div class="cookie-bar" role="dialog" aria-label="Aviso de cookies"><b>Cookies e dados de navegação</b>' +
       '<p class="small" style="margin:6px 0 0">Usamos armazenamento local necessário para o carrinho e o checkout funcionarem. Com sua permissão, também usamos cookies analíticos (contar visitas) e de personalização (recomendações por IA com base nas motos que você viu). Veja a <a href="#/cookies">política de cookies</a>.</p>' +
-      '<div class="acoes"><button class="btn sm" id="ck-aceitar">Aceitar todos</button><button class="btn sm ghost" id="ck-recusar">Recusar opcionais</button><button class="btn sm ghost" id="ck-pers">Personalizar</button></div></div>';
+      '<div class="acoes"><button class="btn sm ghost" id="ck-pers">Personalizar</button><button class="btn sm ghost" id="ck-recusar">Recusar opcionais</button><button class="btn sm dark" id="ck-aceitar">Aceitar todos</button></div></div>';
     $("#ck-aceitar").onclick = function () { salvaConsent(true, true); };
     $("#ck-recusar").onclick = function () { salvaConsent(false, false); };
     $("#ck-pers").onclick = modalCookies;
@@ -255,10 +256,8 @@
     return '<a class="card" href="#/produto/' + p.id + '"><div class="img">' + img(p) + '</div><div class="info">' +
       '<span><span class="tag ' + (p.tipo.indexOf("eletrica") >= 0 ? "" : "gray") + '">' + esc(p.categoria) + "</span></span>" +
       "<h3>" + esc(p.nome) + '</h3><span class="mute small">' + esc(p.motor) + "</span>" +
-      '<div class="swatches">' + p.cores.map(function (c) { return '<span class="swatch" title="' + esc(c.nome) + '" style="background:' + c.hex + '"></span>'; }).join("") + "</div>" +
-      '<div class="preco">' + brl(p.preco) + '</div><span class="parc">ou 10x de ' + brl(p.preco / 10) + ' sem juros</span>' +
-      '<span class="pix">' + brl(p.preco * (1 - R.pixDesconto)) + " no Pix</span>" +
-      (est ? (est <= 5 ? '<span class="small" style="color:#8A5A10">Últimas ' + est + " unidades</span>" : "") : '<span class="small" style="color:var(--red)">Esgotada</span>') + "</div></a>";
+      '<span class="small mute">A partir de</span><div class="preco">' + brl(p.preco) + '</div><span class="parc">ou 10x de ' + brl(p.preco / 10) + ' sem juros</span>' +
+      '<span class="estoque ' + (est ? (est <= 5 ? 'pouco' : '') : 'esgotada') + '">' + (est ? (est <= 5 ? 'Últimas ' + est + ' unidades' : 'Em estoque no galpão') : 'Esgotada') + '</span></div></a>';
   }
   function blocoRecomendacao(atualId, titulo) {
     var r = recomendar(atualId, 4);
@@ -270,19 +269,13 @@
 
   /* ---------- páginas ---------- */
   function home() {
-    var destaque = produto("andes-900");
+    var destaque = produto("c1000rr");
     var d = ler("cad_checkout", null), c = carrinho();
     var volta = d && d.email && c.length ? '<div class="alerta warn" style="margin-top:20px">Você deixou ' + qtdMotos(c) + ' moto(s) no carrinho. <a href="#/carrinho">Continuar a compra</a></div>' : "";
-    app.innerHTML = '<section class="hero"><div class="wrap hero-in"><div><span class="tag amber">Estoque real · prazo antes de pagar</span>' +
-      '<h1 style="margin-top:14px">Da primeira moto à superesportiva, <em>sem pagar para esperar.</em></h1>' +
-      "<p>Só vendemos o que já está no nosso galpão. Você vê o preço final, o frete e a data de entrega antes de pagar, e parcela em até 10x sem juros.</p>" +
-      '<div style="display:flex;gap:12px;flex-wrap:wrap"><a class="btn amber" href="#/catalogo">Ver todas as motos</a><a class="btn ghost" style="color:#fff" href="#/sobre">Como trabalhamos</a></div></div>' +
-      '<div class="arte">' + img(destaque, "#C2A878", "noite") + "</div></div></section>" +
-      '<div class="wrap">' + volta + '<div class="provas"><div><b>Estoque real</b><span>Pedido só com moto no galpão</span></div><div><b>Frete e prazo antes</b><span>Calcule pelo CEP em qualquer página</span></div><div><b>10x sem juros, Pix com 3% ou financiamento em até 48x</b><span>Pagamentos em ambiente de teste</span></div><div><b>7 dias para desistir</b><span>Devolução integral (art. 49 do CDC)</span></div></div>' +
-      '<section class="secao"><div class="secao-tit"><h2 style="margin:0">Escolha pela linha</h2><a href="#/catalogo">Ver todas</a></div>' +
-      '<div class="cats">' + (window.LINHAS || []).map(function (c) { return '<a href="#/catalogo?cat=' + encodeURIComponent(c.nome) + '">' + c.nome + "</a>"; }).join("") + "</div></section>" +
-      (window.LINHAS || []).map(function (l) { var ps = P.filter(function (p) { return p.categoria === l.nome; }); return '<section class="secao"><div class="secao-tit"><div><h2 style="margin:0">' + esc(l.nome) + '</h2><span class="mute">' + esc(l.desc) + '</span></div><a href="#/catalogo?cat=' + encodeURIComponent(l.nome) + '">Ver linha</a></div><div class="produtos">' + ps.map(cardProduto).join("") + "</div></section>"; }).join("") +
-      blocoRecomendacao(null, pode("personalizacao") && ler("cad_hist", []).length ? "Continue de onde parou" : "Mais procuradas por quem trabalha com moto") + "</div>";
+    app.innerHTML = '<section class="hero"><div class="wrap hero-in"><div><span class="hero-label">Esportivas</span><h1>C1000RR</h1><p>' + esc(destaque.motor) + '</p><span class="small">A partir de</span><div class="hero-preco">' + brl(destaque.preco) + '</div><div class="hero-acoes"><a class="btn amber" href="#/produto/c1000rr">Ver a moto</a><a class="btn ghost" href="#/catalogo?cat=Esportivas">Todas as esportivas</a></div></div><div class="arte">' + img(destaque, "#C8372D", "noite") + '</div></div></section>' +
+      '<div class="wrap">' + volta + '<section class="secao vitrine"><div class="secao-tit"><h2>Motos</h2><a href="#/catalogo">Ver as ' + P.length + ' motos</a></div><div class="cats"><a class="on" href="#/catalogo">Todas</a>' + (window.LINHAS || []).map(function (l) { return '<a href="#/catalogo?cat=' + encodeURIComponent(l.nome) + '">' + esc(l.nome) + '</a>'; }).join('') + '</div><div class="produtos">' + P.slice(0, 8).map(cardProduto).join('') + '</div></section>' +
+      '<div class="provas"><div><b>Pronta entrega</b><span>Moto no galpão</span></div><div><b>Frete e prazo antes</b><span>Calcule pelo CEP</span></div><div><b>10x sem juros</b><span>Ou financiamento em até 48x</span></div><div><b>7 dias para desistir</b><span>Devolução integral</span></div></div>' +
+      '<div class="banners"><a class="banner-linha terra" href="#/catalogo?cat=Big%20trail"><span>Big trail</span><h2>Viagem, estrada e terra</h2><u>Ver a linha</u>' + img(produto('andes-900')) + '</a><a class="banner-linha" href="#/catalogo?cat=El%C3%A9tricas"><span>Elétricas</span><h2>Cidade e entrega sem gasolina</h2><u>Ver a linha</u>' + img(produto('spark-e5')) + '</a></div>' + blocoRecomendacao(null, pode("personalizacao") && ler("cad_hist", []).length ? "Continue de onde parou" : "Mais procuradas por quem trabalha com moto") + '</div>';
     ligaPers();
   }
 
@@ -318,20 +311,20 @@
     var cepSalvo = ler("cad_cep", "");
     app.innerHTML = '<div class="wrap"><p class="migalha"><a href="#/">Início</a> / <a href="#/catalogo?cat=' + encodeURIComponent(p.categoria) + '">' + esc(p.categoria) + "</a> / " + esc(p.nome) + "</p>" +
       '<div class="prod"><div class="galeria"><div class="principal" id="foto"></div><div class="thumbs" id="thumbs"></div><p class="small mute" style="margin-top:8px">Ilustrações originais de produto fictício.</p></div>' +
-      '<div><span class="tag gray">' + esc(p.categoria) + "</span><h1 style=\"margin-top:10px\">" + esc(p.nome) + '</h1><p class="mute">' + esc(p.resumo) + "</p>" +
-      '<div class="preco-grande">' + brl(p.preco) + '</div><p>ou <b>10x de ' + brl(p.preco / 10) + '</b> sem juros · <b style="color:var(--green2)">' + brl(p.preco * (1 - R.pixDesconto)) + "</b> no Pix (3% off)</p>" +
+      '<div class="compra"><span class="tag gray">' + esc(p.categoria) + "</span><h1 style=\"margin-top:10px\">" + esc(p.nome) + '</h1><p class="mute">' + esc(p.motor) + '</p>' +
+      '<div class="preco-grande">' + brl(p.preco) + '</div><p><b>' + brl(p.preco * (1 - R.pixDesconto)) + '</b> no Pix, 3% de desconto<br>ou 10x de ' + brl(p.preco / 10) + ' sem juros no cartão</p>' +
       '<label>Cor: <span id="cor-nome"></span></label><div class="cores" id="cores"></div>' +
       '<div class="sku">SKU <b id="sku"></b> · <span id="est"></span></div>' +
       '<div class="linha-compra"><div class="qtd"><button id="menos" aria-label="Diminuir">−</button><span id="qtd">1</span><button id="mais" aria-label="Aumentar">+</button></div>' +
-      '<button class="btn amber" id="comprar" style="flex:1">Adicionar ao carrinho</button></div>' +
-      '<div class="caixa" style="padding:16px 18px"><label for="cep">Frete e prazo de entrega</label><div class="frete-calc"><input id="cep" inputmode="numeric" placeholder="00000-000" maxlength="9" value="' + esc(cepSalvo) + '"><button class="btn sm dark" id="calc">Calcular</button></div><div class="frete-res" id="frete-res"></div>' +
+      '<button class="btn amber" id="comprar" style="flex:1">Comprar</button><button class="btn ghost" id="adicionar" style="flex:1">Adicionar ao carrinho</button></div>' +
+      '<div class="caixa frete-produto" style="padding:16px 18px"><label for="cep">Frete e prazo de entrega</label><div class="frete-calc"><input id="cep" inputmode="numeric" placeholder="00000-000" maxlength="9" value="' + esc(cepSalvo) + '"><button class="btn sm ghost" id="calc">Calcular</button></div><div class="frete-res" id="frete-res"></div>' +
       '<p class="small mute" style="margin:8px 0 0"><a href="https://buscacepinter.correios.com.br/" target="_blank" rel="noopener">Não sei meu CEP</a> · <a href="#/frete">Tabela de frete</a></p></div>' +
-      '<div class="caixa"><h3>Simule o financiamento</h3><div class="grid2"><div class="campo"><label for="sim-entrada">Entrada (%)</label><input id="sim-entrada" type="number" min="20" max="99.99" step="0.01" value="20"></div><div class="campo"><label for="sim-prazo">Prazo</label><select id="sim-prazo">' + C.prazos.map(function (n) { return '<option value="' + n + '">' + n + ' meses</option>'; }).join('') + '</select></div></div><div id="sim-resultado"></div><p class="small mute">Simulação de teste. Sujeita a análise de crédito.</p></div>' +
+      '<ul class="garantias"><li>Garantia de ' + esc(p.ficha.Garantia || '3 anos') + '</li><li>7 dias para desistir</li><li>Pronta entrega</li></ul><div class="caixa"><h3>Simule o financiamento</h3><div class="grid2"><div class="campo"><label for="sim-entrada">Entrada (%)</label><input id="sim-entrada" type="number" min="20" max="99.99" step="0.01" value="20"></div><div class="campo"><label for="sim-prazo">Prazo</label><select id="sim-prazo">' + C.prazos.map(function (n) { return '<option value="' + n + '">' + n + ' meses</option>'; }).join('') + '</select></div></div><div id="sim-resultado"></div><p class="small mute">Simulação de teste. Sujeita a análise de crédito.</p></div>' +
       '<details><summary>Parcelamento no cartão</summary><table id="tab-parc"></table><p class="small mute" style="margin-top:8px">Até 10x sem juros. Em 11x e 12x há juros de 1,99% a.m. (taxa da operadora repassada).</p></details>' +
-      "<details open><summary>Descrição</summary><p style=\"margin-top:10px\">" + esc(p.descricao) + "</p></details>" +
-      '<details><summary>Ficha técnica</summary><table class="ficha">' + Object.keys(p.ficha).map(function (k) { return "<tr><td>" + esc(k) + "</td><td>" + esc(p.ficha[k]) + "</td></tr>"; }).join("") + "</table></details>" +
-      '<details><summary>Entrega, garantia e devolução</summary><p style="margin-top:10px">A moto sai de Juiz de Fora/MG com nota fiscal, manual e chave reserva. Garantia de fábrica de ' + esc(p.ficha.Garantia || "3 anos") + ' e revisões na rede de oficinas parceiras. Você pode desistir em até 7 dias do recebimento com devolução integral. <a href="#/trocas">Ver política</a>.</p></details>' +
-      "</div></div>" + blocoRecomendacao(id) + "</div>";
+      '</div></div><nav class="produto-nav"><a href="#visao">Visão geral</a><a href="#ficha">Ficha técnica</a><a href="#entrega-produto">Entrega e garantia</a></nav><section class="visao" id="visao"><h2>' + esc(p.resumo) + '</h2><p>' + esc(p.descricao) + '</p></section>' +
+      '<div class="numeros">' + ['Motor', 'Potência', 'Tanque', 'Peso'].filter(function (k) { return p.ficha[k]; }).map(function (k) { return '<div><b>' + esc(p.ficha[k]) + '</b><span>' + esc(k) + '</span></div>'; }).join('') + '</div>' +
+      '<section class="ficha-secao" id="ficha"><h2>Ficha técnica</h2><dl>' + Object.keys(p.ficha).map(function (k) { return '<div><dt>' + esc(k) + '</dt><dd>' + esc(p.ficha[k]) + '</dd></div>'; }).join('') + '</dl></section>' +
+      '<section class="entrega-produto" id="entrega-produto"><div><b>Sai do galpão em Juiz de Fora</b><p>Pronta entrega com nota fiscal.</p></div><div><b>Frete e prazo antes</b><p>Calcule pelo CEP antes de pagar.</p></div><div><b>Mudou de ideia?</b><p>Você tem 7 dias para desistir.</p><a href="#/trocas">Ver política</a></div></section>' + blocoRecomendacao(id) + "</div>";
     function desenha() {
       $("#foto").innerHTML = img(p, corSel.hex, vista === "claro" ? "" : "noite");
       $("#thumbs").innerHTML = ["claro", "noite"].map(function (v) { return '<button class="' + (v === vista ? "on" : "") + '" data-v="' + v + '" aria-label="Foto ' + (v === "claro" ? "estúdio" : "noturna") + '">' + img(p, corSel.hex, v === "claro" ? "" : "noite") + "</button>"; }).join("");
@@ -341,7 +334,7 @@
       var e = estoque(corSel.sku);
       $("#cor-nome").textContent = corSel.nome; $("#sku").textContent = corSel.sku;
       $("#est").innerHTML = e ? (e <= 5 ? '<b style="color:#8A5A10">' + e + " em estoque</b>" : e + " em estoque") : '<b style="color:var(--red)">Esgotada nesta cor</b>';
-      $("#qtd").textContent = qtd; $("#comprar").disabled = !e;
+      $("#qtd").textContent = qtd; $("#comprar").disabled = !e; $("#adicionar").disabled = !e;
       $("#tab-parc").innerHTML = "<tr><th>Parcelas</th><th>Valor</th><th>Total</th></tr>" + parcelas(p.preco).map(function (x) { return "<tr><td>" + x.n + "x " + (x.juros ? "com juros" : "sem juros") + "</td><td>" + brl(x.valor) + "</td><td>" + brl(x.total) + "</td></tr>"; }).join("");
     }
     desenha();
@@ -353,6 +346,7 @@
     $("#menos").onclick = function () { if (qtd > 1) { qtd--; $("#qtd").textContent = qtd; } };
     $("#mais").onclick = function () { if (qtd < Math.min(R.limitePorCpf, estoque(corSel.sku))) { qtd++; $("#qtd").textContent = qtd; } else toast("Máximo de " + R.limitePorCpf + " motos por pedido."); };
     $("#comprar").onclick = function () { if (addCarrinho(corSel.sku, qtd)) { toast(p.nome + " adicionada ao carrinho."); location.hash = "#/carrinho"; } };
+    $("#adicionar").onclick = function () { if (addCarrinho(corSel.sku, qtd)) toast(p.nome + " adicionada ao carrinho."); };
     function calc() {
       var cep = $("#cep").value, f = freteCEP(cep), r = $("#frete-res");
       if (!f) { r.innerHTML = '<span style="color:var(--red)">CEP inválido. Digite os 8 números.</span>'; return; }
@@ -360,6 +354,7 @@
       r.innerHTML = "<b>" + esc(f.regiao) + ":</b> " + (f.valor ? brl(f.valor) : "frete grátis") + " · entrega em até <b>" + f.prazo + " dias úteis</b> (até " + diaBR(addDias(agora(), f.prazo + 1)) + ")" + (f.obs ? '<br><span class="small mute">' + esc(f.obs) + "</span>" : "");
     }
     $("#calc").onclick = calc; $("#cep").addEventListener("input", mascaraCEP); $("#cep").addEventListener("keydown", function (e) { if (e.key === "Enter") calc(); });
+    $$(".produto-nav a").forEach(function (a) { a.onclick = function (e) { e.preventDefault(); $(a.getAttribute("href")).scrollIntoView({ behavior: "smooth" }); $$(".produto-nav a").forEach(function (x) { x.classList.remove("on"); }); a.classList.add("on"); }; });
     if (cepSalvo) calc();
     ligaPers();
   }
@@ -419,7 +414,7 @@
     var d = ler("cad_checkout", {}) || {}; if (!d.cep) d.cep = ler("cad_cep", "");
     var passo = d.passo || 1; if (passo > 3) passo = 1;
     var metodo = d.metodo || "pix", parc = d.parc || 1;
-    function nomesPassos() { return '<div class="passos">' + ["1. Identificação", "2. Entrega", "3. Pagamento"].map(function (t, i) { return '<span class="' + (i + 1 === passo ? "on" : i + 1 < passo ? "ok" : "") + '">' + t + "</span>"; }).join("") + "</div>"; }
+    function nomesPassos() { return '<div class="passos">' + ["1. Identificação", "2. Entrega", "3. Pagamento"].map(function (t, i) { return '<span ' + (i + 1 === passo ? 'aria-current="step" ' : '') + 'class="' + (i + 1 === passo ? "on" : i + 1 < passo ? "ok" : "") + '">' + t + "</span>"; }).join("") + "</div>"; }
     function salva() { d.passo = passo; d.metodo = metodo; d.parc = parc; d.ts = agora(); gravar("cad_checkout", d); }
     function render() {
       var r = resumoLateral(d, passo === 3 ? metodo : null, parc), corpo = "";

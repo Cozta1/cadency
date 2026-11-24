@@ -161,7 +161,7 @@
         '<circle cx="520" cy="80" r="140" fill="' + cor + '" opacity="0.18"/>' +
         '<line x1="0" y1="352" x2="640" y2="352" stroke="#2E3642" stroke-width="2"/>';
     } else {
-      bg = '<rect width="640" height="440" fill="#F2F0EA"/><circle cx="320" cy="250" r="190" fill="#E6E2D8"/>';
+      bg = '';
     }
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 440" role="img" aria-label="Ilustração da moto">' +
       bg + '<g transform="translate(20,20)">' + moto(tipo, cor) + '</g>' + extra + '</svg>';
