@@ -3,7 +3,7 @@
   "use strict";
   var L = window.LOJA, P = window.PRODUTOS, F = window.FRETE, R = window.REGRAS;
   var C = window.FINANCIAMENTO;
-  var MODELOS3D = ['andes-900','andes-900-dakar','atacama-1250-expedicao','c1000rr','c1000rr-fundadores','c1000rr-street-hunter','c300r','c600r','c600rr-race','rota-110','rota-160','rota-160-cargo','serra-400'];
+  var MODELOS3D = ['andes-900','andes-900-dakar','atacama-1250-expedicao','c1000rr','c1000rr-fundadores','c1000rr-street-hunter','c300r','c600r','c600rr-race','rota-110','rota-160','rota-160-cargo','serra-400','atacama-1250-rally','spark-e3','spark-e5','spark-work'];
   var script3D, erro3D = false;
   var app = document.getElementById("app");
 
