@@ -79,7 +79,7 @@ window.PRODUTOS = [
     ficha: { "Motor": "1000 cc, 4 cilindros em linha", "Potência": "205 cv", "Suspensão": "Eletrônica semiativa", "Rodas": "Forjadas de alumínio", "Freios": "Pinças monobloco de pista", "Peso": "196 kg", "Garantia": "3 anos" },
     cores: [ { nome: "Tricolor Corrida", hex: "#F4F1EA", sku: "CDY-C1000SH-TC", estoque: 2 } ],
     tags: ["esportiva", "edicao especial", "sp", "1000", "pista", "limitada", "superesportiva"] },
-  { id: "c1000rr-fundadores", nome: "C1000RR Fundadores", categoria: "Edições especiais", tipo: "especial", motor: "1000 cc, 4 cilindros", preco: 189990,
+  { id: "c1000rr-fundadores", nome: "C1000RR Founders", categoria: "Edições especiais", tipo: "especial", motor: "1000 cc, 4 cilindros", preco: 189990,
     resumo: "Série numerada de 50 unidades, com fibra de carbono e escapamento de titânio.",
     descricao: "Edição de lançamento da Cadency, numerada de 1 a 50: carenagem em fibra de carbono, escapamento completo de titânio, placa com o número de série, capa sob medida e um dia de pista com instrutor.",
     ficha: { "Motor": "1000 cc, 4 cilindros em linha", "Potência": "215 cv (com escapamento de titânio)", "Carenagem": "Fibra de carbono", "Rodas": "Forjadas de magnésio", "Série": "50 unidades numeradas", "Peso": "189 kg", "Garantia": "3 anos" },

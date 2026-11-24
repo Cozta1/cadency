@@ -273,9 +273,15 @@
     var d = ler("cad_checkout", null), c = carrinho();
     var volta = d && d.email && c.length ? '<div class="alerta warn" style="margin-top:20px">Você deixou ' + qtdMotos(c) + ' moto(s) no carrinho. <a href="#/carrinho">Continuar a compra</a></div>' : "";
     app.innerHTML = '<section class="hero"><div class="wrap hero-in"><div><span class="hero-label">Esportivas</span><h1>C1000RR</h1><p>' + esc(destaque.motor) + '</p><span class="small">A partir de</span><div class="hero-preco">' + brl(destaque.preco) + '</div><div class="hero-acoes"><a class="btn amber" href="#/produto/c1000rr">Ver a moto</a><a class="btn ghost" href="#/catalogo?cat=Esportivas">Todas as esportivas</a></div></div><div class="arte">' + img(destaque, "#C8372D", "noite") + '</div></div></section>' +
-      '<div class="wrap">' + volta + '<section class="secao vitrine"><div class="secao-tit"><h2>Motos</h2><a href="#/catalogo">Ver as ' + P.length + ' motos</a></div><div class="cats"><a class="on" href="#/catalogo">Todas</a>' + (window.LINHAS || []).map(function (l) { return '<a href="#/catalogo?cat=' + encodeURIComponent(l.nome) + '">' + esc(l.nome) + '</a>'; }).join('') + '</div><div class="produtos">' + P.slice(0, 8).map(cardProduto).join('') + '</div></section>' +
+      '<div class="wrap">' + volta + '<section class="secao vitrine"><div class="secao-tit"><h2>Motos</h2><a href="#/catalogo">Ver as ' + P.length + ' motos</a></div><div class="cats"><a class="on" aria-current="true" data-cat="" href="#/catalogo">Todas</a>' + (window.LINHAS || []).map(function (l) { return '<a data-cat="' + esc(l.nome) + '" href="#/catalogo?cat=' + encodeURIComponent(l.nome) + '">' + esc(l.nome) + '</a>'; }).join('') + '</div><div class="produtos">' + P.map(cardProduto).join('') + '</div></section>' +
       '<div class="provas"><div><b>Pronta entrega</b><span>Moto no galpão</span></div><div><b>Frete e prazo antes</b><span>Calcule pelo CEP</span></div><div><b>10x sem juros</b><span>Ou financiamento em até 48x</span></div><div><b>7 dias para desistir</b><span>Devolução integral</span></div></div>' +
       '<div class="banners"><a class="banner-linha terra" href="#/catalogo?cat=Big%20trail"><span>Big trail</span><h2>Viagem, estrada e terra</h2><u>Ver a linha</u>' + img(produto('andes-900')) + '</a><a class="banner-linha" href="#/catalogo?cat=El%C3%A9tricas"><span>Elétricas</span><h2>Cidade e entrega sem gasolina</h2><u>Ver a linha</u>' + img(produto('spark-e5')) + '</a></div>' + blocoRecomendacao(null, pode("personalizacao") && ler("cad_hist", []).length ? "Continue de onde parou" : "Mais procuradas por quem trabalha com moto") + '</div>';
+    $$(".vitrine .cats a").forEach(function (a) { a.onclick = function (e) {
+      e.preventDefault();
+      $$(".vitrine .cats a").forEach(function (x) { x.classList.remove("on"); x.removeAttribute("aria-current"); });
+      a.classList.add("on"); a.setAttribute("aria-current", "true");
+      $(".vitrine .produtos").innerHTML = P.filter(function (p) { return !a.dataset.cat || p.categoria === a.dataset.cat; }).map(cardProduto).join("");
+    }; });
     ligaPers();
   }
 
